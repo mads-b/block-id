@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="has-header">
+<div class="wrapper-container">
+    <div class="wrapper">
+        <div class="header"><div class="company-logo"></div></div>
+
+        <div class="content">
+            <h2 class="heading">Hello friend!</h2>
+            <p>Please make your selection.</p>
+            <p id="keyInfo"></p>
+            <a href="/static/login.html" class="ok large-button button">Log in</a>
+            <a id="registerButton" href="/static/register.html" class="ok large-button button">Register with the Blockchain</a>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    var masterKey = JSON.parse(window.localStorage.getItem("blockchain.masterkey"));
+    if (masterKey) {
+        $("#registerButton").hide();
+        $("#keyInfo").html("You have an active (locally cached) Master Key with ID " + masterKey.kid + "! Be sure to <a href=\"\" onclick=\"logout()\">Log Out</a> when you are done!");
+    }
+
+    function logout() {
+        window.localStorage.setItem("blockchain.masterkey", undefined);
+        $("#keyInfo").html("");
+        $("#registerButton").show();
+    }
+</script>
+
+</html>

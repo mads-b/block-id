@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Setting status="trace" can help diagnose problems in the logging configuration or in the configured components
+  Valid values are "trace", "debug", "info", "warn", "error" and "fatal".
+-->
+<!--
+  There is a bug in log4j2 where you could see this in the logs:
+    "appender RollingFile has no parameter that matches element ThresholdFilter"
+  Setting status to "fatal" will hide this message.
+-->
+<Configuration status="fatal" monitorInterval="60">
+  <Appenders>
+    <Console name="STDOUT" />
+    <RollingFile name="ApplicationLog" fileName="${sys:log.dir}/application.log"
+                 filePattern="${sys:log.dir}/application.log.%i">
+      <Policies>
+        <OnStartupTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="100 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="10"
+                               fileIndex="min"/>
+      <PatternLayout
+              pattern="%d{ISO8601}{UTC}Z [%thread] %highlight{%-5level} %logger{36} - %msg %X%n"/>
+    </RollingFile>
+
+    <RollingFile name="AccessLog"
+                 fileName="${sys:log.dir}/access.log"
+                 filePattern="${sys:log.dir}/access.log.%i">
+      <Policies>
+        <OnStartupTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="1000 KB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="2"
+                               fileIndex="min"/>
+      <PatternLayout pattern="%m%n"/>
+    </RollingFile>
+
+    <RollingFile name="WarningsLog"
+                 fileName="${sys:log.dir}/warnings.log"
+                 filePattern="${sys:log.dir}/warnings-%d{yyyy-MM-dd}.log.gz">
+      <!--
+          Keep only warnings
+          NEUTRAL lets the even go through following filters, DENY rejects the event and terminates filtering at once
+      -->
+      <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
+      <ThresholdFilter level="error" onMatch="DENY" onMismatch="NEUTRAL"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+      </Policies>
+      <PatternLayout
+              pattern="%d{ISO8601}{UTC}Z [%thread] %highlight{%-5level} %logger{36} - %msg %X%n"/>
+    </RollingFile>
+
+    <RollingFile name="ErrorsLog"
+                 fileName="${sys:log.dir}/errors.log"
+                 filePattern="${sys:log.dir}/errors-%d{yyyy-MM-dd}.log.gz">
+      <!-- Keep all errors and more specific events -->
+      <ThresholdFilter level="error" onMatch="ACCEPT" onMismatch="DENY"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+      </Policies>
+      <PatternLayout
+              pattern="%d{ISO8601}{UTC}Z [%thread] %highlight{%-5level} %logger{36} - %msg %X%n"/>
+    </RollingFile>
+
+    <Console name="ConsoleAppender" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{ISO8601}{UTC}Z [%thread] %highlight{%-5level} %logger{36} - %msg %xException%n"/>
+    </Console>
+
+  </Appenders>
+  <Loggers>
+
+    <!-- Loggers with explicit appender destinations -->
+    <Logger name="signicat.httprequest" level="info" additivity="false">
+      <AppenderRef ref="AccessLog"/>
+    </Logger>
+
+    <!--
+      Override logger levels if they get too noisy,or if we want more info.
+      Everything else goes to rootlogger.
+
+      Logger levels can be one of TRACE, DEBUG, INFO, WARN, ERROR, ALL or OFF.
+    -->
+    <Root level="info">
+      <AppenderRef ref="STDOUT"/>
+    </Root>
+  </Loggers>
+</Configuration>
