@@ -49,7 +49,7 @@ import com.signicat.services.blockchain.crypto.HKDF;
  */
 public class Assertion {
     private static final EncryptionMethod CLAIM_ENCRYPTION_METHOD = EncryptionMethod.A256CBC_HS512;
-    private static final Set<String> PLAINTEXT_CLAIMS = ImmutableSet.of("tkey", "iss", "sub");
+    private static final Set<String> PLAINTEXT_CLAIMS = ImmutableSet.of("t", "iss", "sub");
     private static final ObjectMapper OM = new ObjectMapper();
 
     private final SignedJWT jwt;

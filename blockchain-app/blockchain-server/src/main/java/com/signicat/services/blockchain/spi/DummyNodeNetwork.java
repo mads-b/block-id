@@ -5,10 +5,12 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.common.collect.ImmutableList;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -60,11 +62,15 @@ public class DummyNodeNetwork implements NodeNetwork {
 
     @Override
     public List<String> listBlockIds(final MasterKey masterKey) throws IOException {
-        return null;
+        return assertionMap.entrySet()
+                .stream()
+                .filter(a -> {return a.getValue().getJWT().getHeader().getKeyID().equals(masterKey.getKeyId());})
+                .map(a -> a.getKey())
+                .collect(Collectors.toList());
     }
 
     @Override
     public Assertion getBlock(final MasterKey masterKey, final String blockId) throws IOException {
-        return null;
+        return assertionMap.get(blockId).getAssertion(masterKey.getPublicKey());
     }
 }
