@@ -55,7 +55,10 @@ public class ClientSignedAssertion {
                     .claim("payload", assertionJwt.getJWTClaimsSet().toJSONObject())
                     .claim("signature", assertionJwt.getSignature())
                     .build();
-            final SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claims);
+
+            final SignedJWT signedJWT = new SignedJWT(
+                    new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(masterKey.getKeyId()).build(),
+                    claims);
             // Apply the HMAC
             signedJWT.sign(signer);
             return new ClientSignedAssertion(signedJWT);

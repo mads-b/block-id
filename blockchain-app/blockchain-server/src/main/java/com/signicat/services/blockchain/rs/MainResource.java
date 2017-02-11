@@ -3,16 +3,22 @@ package com.signicat.services.blockchain.rs;
 import java.io.IOException;
 import java.util.Objects;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.ServerErrorException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.nimbusds.jose.jwk.OctetSequenceKey;
+import com.signicat.services.blockchain.crypto.HKDF;
 import com.signicat.services.blockchain.spi.Assertion;
+import com.signicat.services.blockchain.spi.ClientSignedAssertion;
 import com.signicat.services.blockchain.spi.MasterKey;
 import com.signicat.services.blockchain.spi.NodeNetwork;
 
@@ -51,10 +57,36 @@ public class MainResource {
     }
 
     @POST
+    @Path("derivekey")
+    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response deriveMtKey(
+            @FormParam("masterkey") final MasterKey masterKey,
+            @FormParam("t") final String salt) {
+        final OctetSequenceKey mtKey = new OctetSequenceKey.Builder(HKDF.hkdfExpand(HKDF.hkdfExtract(
+                salt.getBytes(), masterKey.getPrivateKey().getEncoded()), new byte[] {}, masterKey.getPrivateKey().getEncoded().length))
+        .build();
+        return Response.ok(mtKey.toJSONObject().toJSONString()).build();
+
+    }
+
+    @POST
     @Path("authenticated")
-    public Response tradeAuthenticationForMasterKey(final Assertion assertion) {
+    public Response associateIdpWithAccount(
+            @FormParam("ass") final Assertion assertion,
+            @FormParam("key") final MasterKey masterKey) {
+        if (masterKey == null) {
+            try {
+                return Response.ok(nodeNetwork.pushAssertion(assertion).getValue()).build();
+            } catch (final IOException e) {
+                LOG.error("Failed pushing assertion to node network.", e);
+                throw new ServerErrorException("Failed while pushing assertion to node network :-(", Response.Status.INTERNAL_SERVER_ERROR);
+            }
+        }
+
         try {
-            return Response.ok(nodeNetwork.pushAssertion(assertion).getValue()).build();
+            nodeNetwork.pushAssertion(ClientSignedAssertion.createFromAssertion(masterKey, assertion));
+            return Response.ok().build();
         } catch (final IOException e) {
             LOG.error("Failed pushing assertion to node network.", e);
             throw new ServerErrorException("Failed while pushing assertion to node network :-(", Response.Status.INTERNAL_SERVER_ERROR);
