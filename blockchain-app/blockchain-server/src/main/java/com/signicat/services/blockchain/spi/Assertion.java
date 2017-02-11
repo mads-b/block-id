@@ -132,7 +132,7 @@ public class Assertion {
         }
     }
 
-    private byte[] makeClaimKey(final byte[] mtKey, final String claimName) {
+    public static byte[] makeClaimKey(final byte[] mtKey, final String claimName) {
         return HKDF.hkdfExpand(
                 HKDF.hkdfExtract(claimName.getBytes(), mtKey), new byte[] {}, CLAIM_ENCRYPTION_METHOD.cekBitLength() / 8);
     }

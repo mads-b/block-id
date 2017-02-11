@@ -1,6 +1,7 @@
 package com.signicat.services.blockchain.spi;
 
 import java.io.IOException;
+import java.security.PublicKey;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,7 @@ public class DummyNodeNetwork implements NodeNetwork {
 
     @Override
     public void pushAssertion(final ClientSignedAssertion assertion) throws IOException {
+        LOG.info(assertion.getValue());
         final String subjectId;
         try {
             final JWTClaimsSet claims = assertion.getJWT().getJWTClaimsSet();
@@ -71,6 +73,7 @@ public class DummyNodeNetwork implements NodeNetwork {
 
     @Override
     public Assertion getBlock(final MasterKey masterKey, final String blockId) throws IOException {
-        return assertionMap.get(blockId).getAssertion(masterKey.getPublicKey());
+        final PublicKey pubKey = masterKey != null ? masterKey.getPublicKey() : null;
+        return assertionMap.get(blockId).getAssertion(pubKey);
     }
 }

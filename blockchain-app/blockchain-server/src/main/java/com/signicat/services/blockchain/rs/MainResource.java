@@ -15,12 +15,16 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.ServerErrorException;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.OctetSequenceKey;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -29,6 +33,8 @@ import com.signicat.services.blockchain.spi.Assertion;
 import com.signicat.services.blockchain.spi.ClientSignedAssertion;
 import com.signicat.services.blockchain.spi.MasterKey;
 import com.signicat.services.blockchain.spi.NodeNetwork;
+
+import net.minidev.json.JSONObject;
 
 /**
  * Endpoints communicated to using AJAX from static webpages hosted by {@link StaticResource},
@@ -120,5 +126,80 @@ public class MainResource {
             LOG.error("Failed fetching blocks.", e);
             throw new ServerErrorException("Failed while pushing assertion to node network :-(", Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @POST
+    @Path("claimkeys")
+    @Produces("application/json")
+    public Response generateKeys(
+            @FormParam("key") final MasterKey key,
+            @FormParam("claims") final String claimsString) {
+        try {
+            final ObjectMapper mapper = new ObjectMapper();
+            final List<String> claims = mapper.readValue(claimsString, List.class);
+            final List<String> blockIds = nodeNetwork.listBlockIds(key);
+            final Map<String, Pair> claimNameToKeys = new HashMap<>();
+
+            for (final String blockId : blockIds) {
+                final Assertion assertion = nodeNetwork.getBlock(key, blockId);
+                final String tKey = assertion.getJwt().getJWTClaimsSet().getStringClaim("t");
+                final OctetSequenceKey mtKey = OctetSequenceKey.parse((String) deriveMtKey(key, tKey).getEntity());
+                for (final String claim : claims) {
+                    if (assertion.getJwt().getJWTClaimsSet().getClaim(claim) != null) {
+                        final OctetSequenceKey claimKey = new OctetSequenceKey.Builder(Assertion.makeClaimKey(mtKey.toByteArray(), claim)).build();
+                        claimNameToKeys.put(claim, new Pair(claimKey.toJSONObject(), blockId));
+                    }
+                }
+            }
+            LOG.info("Master key: " + key.getValue() + " Claims: " + claims.toString());
+            return Response.ok(mapper.writeValueAsString(claimNameToKeys)).build();
+        } catch(final ParseException | IOException e){
+            LOG.error("Failed while generating Claim Keys", e);
+            throw new ServerErrorException("Failed while creating Claim Keys :-(", Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @POST
+    @Path("decryptclaims")
+    @Produces("application/json")
+    public Response decrypt(@FormParam("keys") String keysString) throws IOException {
+        final ObjectMapper mapper = new ObjectMapper();
+
+        final Map<String, Pair> keys = mapper.readValue(keysString, new TypeReference<Map<String, Pair>>() {});
+        final Map<String, String> decryptedClaims = new HashMap<>();
+        for (final Map.Entry<String, Pair> key : keys.entrySet()) {
+            final Assertion ass = nodeNetwork.getBlock(null, key.getValue().blockId);
+            try {
+                decryptedClaims.put(key.getKey(), ass.decryptClaim(key.getKey(), OctetSequenceKey.parse(key.getValue().getKey()).toByteArray(), String.class));
+            } catch (final ParseException e) {
+                LOG.error("Failed parsing key of claim " + key.getKey(), e);
+                throw new ServerErrorException("I failed miserably :-(", Response.Status.INTERNAL_SERVER_ERROR);
+            }
+        }
+        return Response.ok(mapper.writeValueAsString(decryptedClaims)).build();
+    }
+
+
+
+    private static class Pair {
+        private final JSONObject key;
+        private final String blockId;
+
+        @JsonCreator
+        public Pair(@JsonProperty("key") final JSONObject key, @JsonProperty("block_id") final String blockId) {
+            this.key = key;
+            this.blockId = blockId;
+        }
+
+        @JsonProperty("key")
+        public JSONObject getKey() {
+            return key;
+        }
+
+        @JsonProperty("block_id")
+        public String getBlockId() {
+            return blockId;
+        }
+
     }
 }

@@ -69,8 +69,10 @@ public class ClientSignedAssertion {
 
     public Assertion getAssertion(final PublicKey pubKey) throws IOException {
         try {
-            final JWSVerifier verifier = new DefaultJWSVerifierFactory().createJWSVerifier(jwt.getHeader(), pubKey);
-            jwt.verify(verifier);
+            if (pubKey != null) {
+                final JWSVerifier verifier = new DefaultJWSVerifierFactory().createJWSVerifier(jwt.getHeader(), pubKey);
+                jwt.verify(verifier);
+            }
             final JWTClaimsSet claims = jwt.getJWTClaimsSet();
             final Base64URL header = Base64URL.encode(
                     claims.getJSONObjectClaim("header").toJSONString());

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="has-header">
+<div class="wrapper-container">
+  <div class="wrapper">
+    <div class="header"><div class="company-logo"></div></div>
+
+    <div class="content">
+      <h2 class="heading">Ask, and you shall receive</h2>
+      <p>Got some claim keys and want information? You've come to the right place. Input the "stuff" you got below.</p>
+      <textarea rows="4" cols="50" id="keyDump">
+      </textarea>
+      <button type="submit" onclick="getClaims()">Give me data!</button>
+      <pre id="dataDump"></pre>
+    </div>
+  </div>
+</div>
+</body>
+<script type="text/javascript">
+function getClaims() {
+  var json = $("#keyDump").val();
+  $.ajax({
+        type: "POST",
+        url: '/chain/decryptclaims',
+        data: {"keys": json},
+        async: true,
+        success: function (data, textStatus, request) {
+          $("#dataDump").html("Success! This is the data: " + JSON.stringify(data, null, 2));
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            alert("Whoops! " + textStatus + ": " +  errorThrown);
+        }
+  });
+  }
+</script>
+
+</html>

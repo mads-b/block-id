@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="has-header">
+<div class="wrapper-container">
+  <div class="wrapper">
+    <div class="header"><div class="company-logo"></div></div>
+
+    <div class="content">
+      <h2 class="heading">Share your data!</h2>
+      <p>Please check the boxes of the data you want to share with a third party. The following information is known about you:</p>
+      <form id="datashare">
+      </form>
+      <pre id="selectionToShare"></pre>
+
+    </div>
+  </div>
+</div>
+</body>
+<script type="text/javascript">
+    var masterKey = JSON.parse(window.localStorage.getItem("blockchain.masterkey"));
+    dumpData(masterKey);
+
+    function dumpData(masterKey) {
+    $.ajax({
+        type: "GET",
+        url: '/chain/dumpdata' + "?key=" + JSON.stringify(masterKey),
+        async: true,
+        success: function (data, textStatus, request) {
+        var dataShareBoxes = "";
+          for (claimName in data) {
+            dataShareBoxes += '<input type="checkbox" name="datashare" value="' + claimName + '">' + claimName + " (" + data[claimName] + ")<br/>";
+          }
+          dataShareBoxes += '<button type="button" onclick="doShare()">Share!</button>';
+
+          $("#datashare").html(dataShareBoxes);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            alert("Whoops! " + textStatus + ": " +  errorThrown);
+        }
+      });
+    }
+
+    function doShare() {
+      var checkedBoxes = $("input:checked");
+      var claimsToShare = [];
+      console.log(checkedBoxes);
+      for (i=0;i<checkedBoxes.length;i++) {
+          claimsToShare.push(checkedBoxes[i].value);
+      }
+      $.ajax({
+        type: "POST",
+        url: '/chain/claimkeys',
+        data: {
+          "key": JSON.stringify(masterKey),
+          "claims": JSON.stringify(claimsToShare)
+        },
+        async: true,
+        success: function (data, textStatus, request) {
+          $("#selectionToShare").html("Success! Give the following data to your recipient: " + JSON.stringify(data, null, 2));
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            alert("Whoops! " + textStatus + ": " +  errorThrown);
+        }
+      });
+      $("#selectionToShare").html(JSON.stringify(claimsToShare));
+    }
+</script>
+
+</html>

@@ -17,7 +17,9 @@
             <a id="associateButton" href="/static/associate.html" class="ok large-button button">Associate an IdP with your account</a>
             <a id="registerButton" href="/static/register.html" class="ok large-button button">Register with the Blockchain</a>
             <a id="recoverButton" href="/static/recover.html" class="ok large-button button">Recover your master key using an IdP</a>
-            <p id="dataDump"></p>
+            <a id="shareButton" href="/static/share.html" class="ok large-button button">Share your data</a>
+            <a id="receiveButton" href="/static/receive.html" class="ok large-button button">Receive data from another person</a>
+            <pre id="dataDump"></pre>
         </div>
     </div>
 </div>
@@ -29,10 +31,12 @@
         $("#registerButton").hide();
         $("#recoverButton").hide();
         $("#associateButton").show();
+        $("#shareButton").show();
         $("#keyInfo").html("You have an active (locally cached) Master Key with ID " + masterKey.kid + "! Be sure to <a href=\"\" onclick=\"logout()\">Log Out</a> when you are done!");
         dumpData(masterKey);
     } else {
         $("#associateButton").hide();
+        $("#shareButton").hide();
     }
 
     function logout() {
@@ -41,6 +45,7 @@
         $("#registerButton").show();
         $("#recoverButton").show();
         $("#associateButton").hide();
+        $("#shareButton").hide();
     }
 
     function dumpData(masterKey) {
@@ -49,7 +54,7 @@
         url: '/chain/dumpdata' + "?key=" + JSON.stringify(masterKey),
         async: true,
         success: function (data, textStatus, request) {
-            $("#dataDump").html("Here's a JSON object containing everything the blockchain knows about you:" + JSON.stringify(data));
+            $("#dataDump").html("Here's a JSON object containing \neverything the blockchain knows about you:\n" + JSON.stringify(data, null, 2));
         },
         error: function(jqXHR, textStatus, errorThrown) {
             alert("Whoops! " + textStatus + ": " +  errorThrown);
