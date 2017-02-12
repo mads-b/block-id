@@ -77,7 +77,9 @@ public class ClientSignedAssertion {
             final Base64URL header = Base64URL.encode(
                     claims.getJSONObjectClaim("header").toJSONString());
             final Base64URL payload = Base64URL.encode(claims.getJSONObjectClaim("payload").toJSONString());
-            final Base64URL signature = (Base64URL) claims.getClaim("signature");
+            final Base64URL signature = claims.getClaim("signature") instanceof Base64URL
+                    ? (Base64URL) claims.getClaim("signature")
+                    : new Base64URL(claims.getStringClaim("signature"));
             final SignedJWT newJwt = new SignedJWT(header, payload, signature);
             return new Assertion(newJwt);
         } catch (final JOSEException | ParseException e) {

@@ -18,6 +18,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import com.signicat.services.blockchain.rs.MainResource;
 import com.signicat.services.blockchain.rs.StaticResource;
 import com.signicat.services.blockchain.spi.DummyNodeNetwork;
+import com.signicat.services.blockchain.spi.TrueNodeNetwork;
 
 /**
  * Main entry point for server.
@@ -62,7 +63,7 @@ public class Main {
         LOG.info("Bootstrapping Blockchain Client");
         return new ResourceConfig()
                 .register(new StaticResource())
-                .register(new MainResource(new DummyNodeNetwork()));
+                .register(new MainResource(new TrueNodeNetwork()));
     }
 
     public void start() {

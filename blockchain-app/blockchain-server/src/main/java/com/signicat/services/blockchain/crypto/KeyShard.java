@@ -10,7 +10,7 @@ import com.google.common.base.Objects;
 /**
  * Bean representation of one shard share of a master key.
  */
-public final class KeyShard {
+public class KeyShard {
     private final String keyId;
     private final int shareIndex;
     private final int neededToReassemble;
