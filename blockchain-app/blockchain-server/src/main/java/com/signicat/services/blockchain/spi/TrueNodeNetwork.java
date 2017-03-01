@@ -28,7 +28,6 @@ import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.signicat.services.blockchain.crypto.KeyShard;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import sun.security.rsa.RSAPublicKeyImpl;
 
@@ -40,8 +39,8 @@ public class TrueNodeNetwork extends DummyNodeNetwork {
     private static final Logger LOG = LogManager.getLogger(TrueNodeNetwork.class);
 
     private static final List<URI> NODES = ImmutableList.of(
-            URI.create("http://146.185.128.250:9000/"),
-            URI.create("http://37.139.20.249:9000/")
+            URI.create("http://95.85.5.71:9000/"),
+            URI.create("http://146.185.132.163:9000/")
     );
 
 

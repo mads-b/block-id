@@ -1,5 +1,6 @@
 package com.signicat.services.blockchain;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -39,19 +40,13 @@ public class Main {
     }
 
     public Main(final String[] args) {
-        if (args.length != 1) {
-            throw new RuntimeException("Need ONE parameter only (path to properties file)!");
-        }
-        final String propertiesFilePath = args[0];
-        final File file = new File(propertiesFilePath);
         properties = new Properties();
-        try {
-            properties.load(new FileInputStream(file));
-        } catch (IOException e) {
-            throw new RuntimeException("File named "
-                    + file.getAbsolutePath()
-                    + " does not exist or is not readable.", e);
-        }
+        properties.put("http.port", "1337");
+        properties.put("drain.file.directory", "/var/run");
+        properties.put("metrics.context.name", "blockchain");
+        properties.put("graphite.address", "localhost:9109");
+        properties.put("graphite.polling_period_seconds", 30);
+        properties.put("base.uri", "http://localhost:1337/");
         URI baseUri = UriBuilder
                 .fromUri("http://localhost/")
                 .port(Integer.parseInt(properties.getProperty("http.port")))
@@ -71,6 +66,11 @@ public class Main {
             server.start();
         } catch (final Exception e) {
             LOG.warn("Got exception while starting Jetty Server.", e);
+        }
+        try {
+            Desktop.getDesktop().browse(URI.create("http://localhost:1337/static/index.html"));
+        } catch (final IOException e) {
+            e.printStackTrace();
         }
         try {
             server.join();

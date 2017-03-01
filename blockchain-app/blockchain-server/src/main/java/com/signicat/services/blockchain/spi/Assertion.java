@@ -64,7 +64,7 @@ public class Assertion {
             final byte[] tkey,
             final PrivateKey idpKey) throws IOException {
         final JWTClaimsSet.Builder encJwtBuilder = new JWTClaimsSet.Builder()
-                .claim("tkey", Base64.encode(tkey));
+                .claim("t", Base64.encode(tkey));
 
         for (final Map.Entry<String, Object> claim : claimsPlainText.getClaims().entrySet()) {
             if (PLAINTEXT_CLAIMS.contains(claim.getKey())) {
@@ -124,7 +124,12 @@ public class Assertion {
     public <T> T decryptClaim(final String claimName, final byte[] claimKey, final Class<T> type) throws IOException {
         final JWEObject jwe;
         try {
-            jwe = JWEObject.parse((String)jwt.getJWTClaimsSet().getClaim(claimName));
+            final Object claim = jwt.getJWTClaimsSet().getClaim(claimName);
+            jwe = JWEObject.parse(claim instanceof String
+                    ? (String) claim
+                    : (claim instanceof Base64
+                    ? ((Base64) claim).toJSONString()
+                    : null));
             jwe.decrypt(new DirectDecrypter(claimKey));
             return OM.readValue(jwe.getPayload().toString(), type);
         } catch (ParseException | JOSEException e) {
