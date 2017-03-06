@@ -68,7 +68,9 @@ public class Main {
             LOG.warn("Got exception while starting Jetty Server.", e);
         }
         try {
-            Desktop.getDesktop().browse(URI.create("http://localhost:1337/static/index.html"));
+            if(Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(URI.create("http://localhost:1337/static/index.html"));
+            }
         } catch (final IOException e) {
             e.printStackTrace();
         }

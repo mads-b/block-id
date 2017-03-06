@@ -19,12 +19,14 @@
 </html>
 <!-- This webpage will do a lot of redirects and is essentially a JS-based OpenID Connect client -->
 <script type="text/javascript">
+  var uri = window.location.href.split('/');
+  var baseUri = uri[0] + '//' + uri[2];
   var clientId = "35792b8a-8085-4946-b9ef-1092bcafe07c";
   var clientSecret = "3f73025d-bcab-4f90-80bc-9263c6641752";
   var scope = "openid profile";
   var acr = "urn:signicat:oidc:method:dummy-auth";
   var state = Math.random().toString(36).substring(7);
-  var redirectUri = encodeURI("http://localhost:1337/static/login.html");
+  var redirectUri = encodeURI(baseUri + "/static/login.html");
   var authorizeUri = "https://dev01.signicat.com/oidc/authorize";
   var tokenUri = "https://dev01.signicat.com/oidc/token";
   var userinfoUri = "https://dev01.signicat.com/oidc/userinfo";

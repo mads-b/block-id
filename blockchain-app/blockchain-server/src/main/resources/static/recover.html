@@ -27,10 +27,12 @@
 </html>
 <!-- This webpage will do a lot of redirects and is essentially a JS-based OpenID Connect client -->
 <script type="text/javascript">
+  var uri = window.location.href.split('/');
+  var baseUri = uri[0] + '//' + uri[2];
   clientId = "184a9125-951b-4160-a81d-cfba7390ae5c";
   clientSecret = "ad7b77f9-1d7a-4687-9cb8-0b514f0d3671";
   state = Math.random().toString(36);
-  redirectUri = encodeURI("http://localhost:1337/static/recover.html");
+  redirectUri = encodeURI(baseUri + "/static/recover.html");
   tokenUri = "https://dev01.signicat.com/oidc/token";
   userinfoUri = "https://dev01.signicat.com/oidc/userinfo";
 
@@ -93,9 +95,9 @@ function doAuth() {
             data: {"ass": idToken},
             async: true,
             success: function (data, textStatus, request) {
-            window.localStorage.setItem("blockchain.masterkey", data);
+            window.localStorage.setItem("blockchain.masterkey", JSON.stringify(data));
                 var desc = $("#feedback");
-                desc.html("Authentication succeeded. The node network yielded the necessary key parts to rebuild your master key. Click <a href=\"/static/index.html\">here</a> to return to the previous page. Your current Master Key ID is " + JSON.parse(data).kid);
+                desc.html("Authentication succeeded. The node network yielded the necessary key parts to rebuild your master key. Click <a href=\"/static/index.html\">here</a> to return to the previous page. Your current Master Key ID is " + data.kid);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 alert("Whoops! " + textStatus + ": " +  errorThrown);

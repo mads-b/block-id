@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.print.attribute.standard.Media;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -85,6 +86,8 @@ public class MainResource {
     }
 
     @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("authenticated")
     public Response associateIdpWithAccount(
             @FormParam("ass") final Assertion assertion,
@@ -109,7 +112,7 @@ public class MainResource {
 
     @GET
     @Path("dumpdata")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getAllData(@QueryParam("key") final MasterKey masterKey) {
         try {
             final List<String> blockIds = nodeNetwork.listBlockIds(masterKey);
@@ -130,7 +133,8 @@ public class MainResource {
 
     @POST
     @Path("claimkeys")
-    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response generateKeys(
             @FormParam("key") final MasterKey key,
             @FormParam("claims") final String claimsString) {
@@ -161,7 +165,8 @@ public class MainResource {
 
     @POST
     @Path("decryptclaims")
-    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response decrypt(@FormParam("keys") String keysString) throws IOException {
         final ObjectMapper mapper = new ObjectMapper();
 
