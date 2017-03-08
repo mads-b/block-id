@@ -36,6 +36,7 @@
           for (idx in blockList) {
             var block = blockList[idx];
             for (claimName in block) {
+              if (-1 !== $.inArray(claimName, ["sub", "t", "iss"])) { continue; }
               dataShareBoxes += '<input type="checkbox" name="datashare" value="' + claimName + '">' + claimName + " (" + block[claimName] + ")<br/>";
             }
           }
