@@ -31,10 +31,13 @@
         type: "GET",
         url: '/chain/dumpdata' + "?key=" + JSON.stringify(masterKey),
         async: true,
-        success: function (data, textStatus, request) {
-        var dataShareBoxes = "";
-          for (claimName in data) {
-            dataShareBoxes += '<input type="checkbox" name="datashare" value="' + claimName + '">' + claimName + " (" + data[claimName] + ")<br/>";
+        success: function (blockList, textStatus, request) {
+          var dataShareBoxes = "";
+          for (idx in blockList) {
+            var block = blockList[idx];
+            for (claimName in block) {
+              dataShareBoxes += '<input type="checkbox" name="datashare" value="' + claimName + '">' + claimName + " (" + block[claimName] + ")<br/>";
+            }
           }
           dataShareBoxes += '<button type="button" onclick="doShare()">Share!</button>';
 

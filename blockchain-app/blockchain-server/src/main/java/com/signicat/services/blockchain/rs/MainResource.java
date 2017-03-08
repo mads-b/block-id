@@ -2,12 +2,12 @@ package com.signicat.services.blockchain.rs;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.print.attribute.standard.Media;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -16,7 +16,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.ServerErrorException;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -116,13 +115,13 @@ public class MainResource {
     public Response getAllData(@QueryParam("key") final MasterKey masterKey) {
         try {
             final List<String> blockIds = nodeNetwork.listBlockIds(masterKey);
-            final Map<String, Object> data = new HashMap<>();
+            final List<Map<String, Object>> data = new ArrayList<>();
             for (final String blockId : blockIds) {
                 final Assertion assertion = nodeNetwork.getBlock(masterKey, blockId);
                 final String tKey = assertion.getJwt().getJWTClaimsSet().getStringClaim("t");
                 final OctetSequenceKey mtKey = OctetSequenceKey.parse((String)deriveMtKey(masterKey, tKey).getEntity());
                 final JWTClaimsSet claims = assertion.decryptClaims(mtKey.toByteArray());
-                data.putAll(claims.getClaims());
+                data.add(claims.getClaims());
             }
             return Response.ok(new ObjectMapper().writeValueAsString(data)).build();
         } catch (final IOException | ParseException e) {
