@@ -31,13 +31,13 @@
         type: "GET",
         url: '/chain/dumpdata' + "?key=" + JSON.stringify(masterKey),
         async: true,
-        success: function (blockList, textStatus, request) {
+        success: function (blocks, textStatus, request) {
           var dataShareBoxes = "";
-          for (idx in blockList) {
-            var block = blockList[idx];
+          for (blockId in blocks) {
+            var block = blocks[blockId];
             for (claimName in block) {
               if (-1 !== $.inArray(claimName, ["sub", "t", "iss"])) { continue; }
-              dataShareBoxes += '<input type="checkbox" name="datashare" value="' + claimName + '">' + claimName + " (" + block[claimName] + ")<br/>";
+              dataShareBoxes += '<input type="checkbox" name="datashare" value="' + blockId + ':' + claimName + '">' + claimName + " (" + block[claimName] + ")<br/>";
             }
           }
           dataShareBoxes += '<button type="button" onclick="doShare()">Share!</button>';
@@ -52,17 +52,21 @@
 
     function doShare() {
       var checkedBoxes = $("input:checked");
-      var claimsToShare = [];
+      var claimsToShare = {};
       console.log(checkedBoxes);
       for (i=0;i<checkedBoxes.length;i++) {
-          claimsToShare.push(checkedBoxes[i].value);
+        var split = checkedBoxes[i].value.split(':');
+          if (!claimsToShare[split[0]]) {
+            claimsToShare[split[0]] = [];
+          }
+          claimsToShare[split[0]].push(split[1]);
       }
       $.ajax({
         type: "POST",
         url: '/chain/claimkeys',
         data: {
           "key": JSON.stringify(masterKey),
-          "claims": JSON.stringify(claimsToShare)
+          "block_and_claim_names": JSON.stringify(claimsToShare)
         },
         async: true,
         success: function (data, textStatus, request) {

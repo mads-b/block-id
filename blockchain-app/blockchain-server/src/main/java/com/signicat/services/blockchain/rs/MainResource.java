@@ -2,7 +2,6 @@ package com.signicat.services.blockchain.rs;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,13 +114,13 @@ public class MainResource {
     public Response getAllData(@QueryParam("key") final MasterKey masterKey) {
         try {
             final List<String> blockIds = nodeNetwork.listBlockIds(masterKey);
-            final List<Map<String, Object>> data = new ArrayList<>();
+            final Map<String, Map<String, Object>> data = new HashMap<>();
             for (final String blockId : blockIds) {
                 final Assertion assertion = nodeNetwork.getBlock(masterKey, blockId);
                 final String tKey = assertion.getJwt().getJWTClaimsSet().getStringClaim("t");
                 final OctetSequenceKey mtKey = OctetSequenceKey.parse((String)deriveMtKey(masterKey, tKey).getEntity());
                 final JWTClaimsSet claims = assertion.decryptClaims(mtKey.toByteArray());
-                data.add(claims.getClaims());
+                data.put(blockId, claims.getClaims());
             }
             return Response.ok(new ObjectMapper().writeValueAsString(data)).build();
         } catch (final IOException | ParseException e) {
@@ -136,25 +135,25 @@ public class MainResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response generateKeys(
             @FormParam("key") final MasterKey key,
-            @FormParam("claims") final String claimsString) {
+            @FormParam("block_and_claim_names") final String claimsString) {
         try {
             final ObjectMapper mapper = new ObjectMapper();
-            final List<String> claims = mapper.readValue(claimsString, List.class);
-            final List<String> blockIds = nodeNetwork.listBlockIds(key);
+            final Map<String, List<String>> blockAndClaimNames = mapper.readValue(claimsString, Map.class);
             final Map<String, Pair> claimNameToKeys = new HashMap<>();
 
-            for (final String blockId : blockIds) {
+            for (final Map.Entry<String, List<String>> blockIdAndClaimNames : blockAndClaimNames.entrySet()) {
+                final String blockId = blockIdAndClaimNames.getKey();
                 final Assertion assertion = nodeNetwork.getBlock(key, blockId);
                 final String tKey = assertion.getJwt().getJWTClaimsSet().getStringClaim("t");
                 final OctetSequenceKey mtKey = OctetSequenceKey.parse((String) deriveMtKey(key, tKey).getEntity());
-                for (final String claim : claims) {
+                for (final String claim : blockIdAndClaimNames.getValue()) {
                     if (assertion.getJwt().getJWTClaimsSet().getClaim(claim) != null) {
                         final OctetSequenceKey claimKey = new OctetSequenceKey.Builder(Assertion.makeClaimKey(mtKey.toByteArray(), claim)).build();
                         claimNameToKeys.put(claim, new Pair(claimKey.toJSONObject(), blockId));
                     }
                 }
             }
-            LOG.info("Master key: " + key.getValue() + " Claims: " + claims.toString());
+            LOG.info("Master key: " + key.getValue() + " Reuested Claims: " + blockAndClaimNames.toString());
             return Response.ok(mapper.writeValueAsString(claimNameToKeys)).build();
         } catch(final ParseException | IOException e){
             LOG.error("Failed while generating Claim Keys", e);
