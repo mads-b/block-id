@@ -21,36 +21,69 @@ function getParameterByName(name, url) {
   return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
 
-// Redirects the browser to the Signicat-proxied ID method of choice
-function doAuth(scope, method) {
-    var acr = "urn:signicat:oidc:method:" + method;
-    var uri = authorizeUri + "?response_type=code"
-  + "&redirect_uri=" + redirectUri
-  + "&client_id=" + clientId
-  + "&scope=" + scope
-  + "&state=" + state
-  + "&acr_values=" + acr;
-
-    window.sessionStorage.setItem('state', state);
-    window.location = uri;
+function hiddenInput(key, value) {
+  return "<input type='hidden' name='" + key + "' value='" + value + "'>";
 }
 
-function getToken(code, callback, extraParams) {
+// Redirects the browser to the Signicat-proxied ID method of choice
+function doAuth(scope, method, t, mt) {
+    var acr = "urn:signicat:oidc:method:" + method;
+    var params = {
+      "response_type": "code",
+      "redirect_uri": redirectUri,
+      "client_id": clientId,
+      "scope": scope,
+      "state": state,
+      "acr_values": acr};
+
+    if (t) {
+      params["claims"] = JSON.stringify({
+        "userinfo": {
+            "t": {"value": t},
+            "mt": {"value": mt}
+            }
+        });
+    }
+    window.sessionStorage.setItem('state', state);
+    var form = "<form action='" + authorizeUri + "' method='POST'>";
+    for (key in params) {
+      form += hiddenInput(key, params[key]);
+    }
+    form += '</form>';
+    console.log(form);
+    $(form).appendTo($(document.body)).submit();
+}
+
+function getToken(code, callback) {
   var authorizationString = "Basic " + btoa(clientId + ":" + clientSecret);
-  var tokenParams = Object.assign({
+  var tokenParams = {
     "grant_type": "authorization_code",
     "code": code,
-    "redirect_uri": redirectUri}, extraParams);
+    "redirect_uri": redirectUri};
   $.ajax({
-  type: "POST",
-  url: tokenUri,
-  headers: { "Authorization": authorizationString},
-  data: tokenParams,
-  accept: 'application/json',
-  async: true,
-  success: callback,
+    type: "POST",
+    url: tokenUri,
+    headers: { "Authorization": authorizationString},
+    data: tokenParams,
+    accept: 'application/json',
+    async: true,
+    success: callback,
     error: function(jqXHR, textStatus, errorThrown) {
         alert("Whoops! " + textStatus + ": " +  errorThrown);
     }
   });
 };
+
+function getUserInfo(accessToken, callback) {
+  $.ajax({
+    type: "GET",
+    url: userinfoUri,
+    headers: { "Authorization": "Bearer " + accessToken},
+    dataType: 'text',
+    async: true,
+    success: callback,
+    error: function(jqXHR, textStatus, errorThrown) {
+        alert("Whoops! " + textStatus + ": " +  errorThrown);
+    }
+  });
+}

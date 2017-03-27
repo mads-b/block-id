@@ -43,28 +43,39 @@
   function initAuth() {
     var scope = "openid profile";
     var method = $("#idpSelector").val();
-    doAuth(scope, method);
-  };
-
-function codeToAssertion(code) {
-  var masterKey = window.localStorage.getItem("blockchain.masterkey");
-  var mtKey;
-  var tokenResponseCallback = function (data, textStatus, request) {
-    var accessToken = data.access_token;
+    var masterKey = window.localStorage.getItem("blockchain.masterkey");
+    console.log("POSTing to localhost to get compound key..");
     $.ajax({
-      type: "GET",
-      url: userinfoUri + "?jwk=" + JSON.stringify(mtKey) + "&t=" + state,
-      headers: { "Authorization": "Bearer " + accessToken},
-      dataType: 'text',
+      type: "POST",
+      url: '/chain/derivekey',
+      data: {
+        "masterkey": masterKey,
+        "t": state},
+      accept: 'application/json',
       async: true,
       success: function (data, textStatus, request) {
-        var assertionAndKey = { "ass": data, "key": masterKey };
+        console.log("Compound key received. Proceeding to authentication");
+        mtKey = data;
+        doAuth(scope, method, state, data);
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert("Whoops! " + textStatus + ": " +  errorThrown);
+      }
+    });
+  };
+
+  function codeToAssertion(code) {
+    var masterKey = window.localStorage.getItem("blockchain.masterkey");
+    getToken(code, function(data) {
+      var accessToken = data.access_token;
+      getUserInfo(accessToken, function(data2) {
+        var assertionAndKey = { "ass": data2, "key": masterKey };
         $.ajax({
           type: "POST",
           url: '/chain/authenticated',
           data: assertionAndKey,
           async: true,
-          success: function (data, textStatus, request) {
+          success: function (data3, textStatus, request) {
               var desc = $("#feedback");
               desc.html("You are set up! You can now authenticate using Signicat in order to release your master key. Click <a href=\"/static/index.html\">here</a> to return to the previous page. Your current (cached) Master Key ID is " + JSON.parse(masterKey).kid);
           },
@@ -72,27 +83,7 @@ function codeToAssertion(code) {
               alert("Whoops! " + textStatus + ": " +  errorThrown);
           }
         });
-      }
+      });
     });
-  };
-
-  $.ajax({
-    type: "POST",
-    url: '/chain/derivekey',
-    data: {
-      "masterkey": masterKey,
-      "t": state},
-    accept: 'application/json',
-    async: true,
-    success: function (data, textStatus, request) {
-      mtKey = data;
-      getToken(code, tokenResponseCallback, {"jwk": mtKey, "t": state});
-    },
-    error: function(jqXHR, textStatus, errorThrown) {
-      alert("Whoops! " + textStatus + ": " +  errorThrown);
-    }
-  });
-}
-
-
+  }
 </script>
